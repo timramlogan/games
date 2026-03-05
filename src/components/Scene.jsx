@@ -3,6 +3,7 @@ import { OrbitControls, Sky, ContactShadows } from '@react-three/drei'
 import { useBuildingStore } from '../store/buildingStore'
 import Ground from './Ground'
 import PlacedBlock from './PlacedBlock'
+import Animals from './Animals'
 
 /**
  * Main 3D scene.
@@ -82,6 +83,9 @@ export default function Scene() {
         blur={2}
         far={10}
       />
+
+      {/* ── Animals ─────────────────────────────────────────────────────── */}
+      <Animals />
 
       {/* ── Placed blocks ───────────────────────────────────────────────── */}
       {blocks.map((block) => (
