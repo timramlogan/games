@@ -4,6 +4,7 @@ import { useBuildingStore } from '../store/buildingStore'
 import Ground from './Ground'
 import PlacedBlock from './PlacedBlock'
 import Animals from './Animals'
+import TristanCraftTitle from './TristanCraftTitle'
 
 /**
  * Main 3D scene.
@@ -83,6 +84,9 @@ export default function Scene() {
         blur={2}
         far={10}
       />
+
+      {/* ── Ground title ────────────────────────────────────────────────── */}
+      <TristanCraftTitle />
 
       {/* ── Animals ─────────────────────────────────────────────────────── */}
       <Animals />
