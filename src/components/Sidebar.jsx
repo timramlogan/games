@@ -130,7 +130,7 @@ export default function Sidebar() {
     <div style={S.root}>
       {/* Header */}
       <div style={S.header}>
-        <div style={S.headerTitle}>Construction Sandbox</div>
+        <div style={S.headerTitle}>TristanCraft</div>
         <div style={S.headerSub}>
           Click a block to select it, then click the grid to place it.
         </div>
