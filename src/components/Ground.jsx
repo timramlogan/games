@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import { Grid } from '@react-three/drei'
 import { usePlane } from '@react-three/cannon'
 import { v4 as uuidv4 } from 'uuid'
@@ -7,28 +7,17 @@ import { BLOCK_TYPES } from '../constants/blockTypes'
 
 const GRID_SIZE = 100
 
-/**
- * Ground component:
- *  - Invisible Cannon.js static plane for physics collisions
- *  - Visible grass-coloured plane with event handlers for block placement
- *  - @react-three/drei <Grid> overlay for the 1-unit cell grid
- *  - Semi-transparent ghost preview of the block-to-be-placed
- */
 export default function Ground() {
   const { selectedType, addBlock, blocks } = useBuildingStore()
-  const [hoverCell, setHoverCell] = useState(null) // [x, z] integers
+  const [hoverCell, setHoverCell] = useState(null)
+  const downData = useRef(null)
 
-  // ── Cannon physics plane (invisible) ──────────────────────────────────────
-  // We attach the cannon ref to a separate invisible mesh so the physics body
-  // exists independently of the visible/interactive ground mesh.
   const [physicsRef] = usePlane(() => ({
     type: 'Static',
     rotation: [-Math.PI / 2, 0, 0],
     position: [0, 0, 0],
   }))
 
-  // ── Height-map helper ─────────────────────────────────────────────────────
-  // Returns the Y coordinate of the top surface of the tallest block at (x,z).
   const getHeightAt = useCallback(
     (x, z) => {
       let maxTop = 0
@@ -46,7 +35,6 @@ export default function Ground() {
     [blocks]
   )
 
-  // ── Event helpers ─────────────────────────────────────────────────────────
   const snapToGrid = (point) => ({
     x: Math.round(point.x),
     z: Math.round(point.z),
@@ -59,7 +47,6 @@ export default function Ground() {
     }
     e.stopPropagation()
     const { x, z } = snapToGrid(e.point)
-    // Only update state when the cell actually changes (avoids unnecessary re-renders)
     setHoverCell((prev) =>
       prev && prev[0] === x && prev[1] === z ? prev : [x, z]
     )
@@ -67,16 +54,31 @@ export default function Ground() {
 
   const handlePointerLeave = () => setHoverCell(null)
 
+  // Store the pointer-down data so we can check movement on pointer-up.
+  // This lets OrbitControls drag-to-orbit without accidentally placing blocks.
   const handlePointerDown = (e) => {
-    if (e.button !== 0 || !selectedType) return
+    if (!selectedType) return
+    if (e.button !== 0 && e.pointerType !== 'touch') return
     e.stopPropagation()
-    const { x, z } = snapToGrid(e.point)
+    downData.current = {
+      clientX: e.clientX,
+      clientY: e.clientY,
+      point: e.point.clone(),
+    }
+  }
+
+  const handlePointerUp = (e) => {
+    if (!selectedType || !downData.current) return
+    const d = downData.current
+    downData.current = null
+    const moved = Math.hypot(e.clientX - d.clientX, e.clientY - d.clientY)
+    if (moved > 8) return // was a drag (orbit), not a tap
+    const { x, z } = snapToGrid(d.point)
     const bt = BLOCK_TYPES[selectedType]
     const y = getHeightAt(x, z) + bt.size[1] / 2
     addBlock({ id: uuidv4(), type: selectedType, position: [x, y, z] })
   }
 
-  // ── Ghost preview geometry ─────────────────────────────────────────────
   let ghost = null
   if (hoverCell && selectedType) {
     const [cx, cz] = hoverCell
@@ -102,25 +104,23 @@ export default function Ground() {
 
   return (
     <>
-      {/* ── Invisible physics ground ────────────────────────────────────── */}
       <mesh ref={physicsRef} visible={false}>
         <planeGeometry args={[GRID_SIZE * 2, GRID_SIZE * 2]} />
         <meshBasicMaterial />
       </mesh>
 
-      {/* ── Visible interactive ground ──────────────────────────────────── */}
       <mesh
         rotation={[-Math.PI / 2, 0, 0]}
         receiveShadow
         onPointerMove={handlePointerMove}
         onPointerLeave={handlePointerLeave}
         onPointerDown={handlePointerDown}
+        onPointerUp={handlePointerUp}
       >
         <planeGeometry args={[GRID_SIZE, GRID_SIZE]} />
         <meshStandardMaterial color="#2d5a1b" roughness={0.9} />
       </mesh>
 
-      {/* ── Grid overlay ────────────────────────────────────────────────── */}
       <Grid
         args={[GRID_SIZE, GRID_SIZE]}
         position={[0, 0.002, 0]}
@@ -135,7 +135,6 @@ export default function Ground() {
         infiniteGrid={false}
       />
 
-      {/* ── Ghost placement preview ─────────────────────────────────────── */}
       {ghost}
     </>
   )

@@ -7,8 +7,8 @@ const blocksRef = ref(db, 'blocks')
 export const useBuildingStore = create((set) => ({
   blocks: [],
   selectedType: null,
+  deleteMode: false,
 
-  // Call once on app mount — Firebase pushes updates to all connected clients
   subscribe: () => {
     return onValue(blocksRef, (snapshot) => {
       const data = snapshot.val()
@@ -28,5 +28,8 @@ export const useBuildingStore = create((set) => ({
     dbSet(blocksRef, null)
   },
 
-  setSelectedType: (type) => set({ selectedType: type }),
+  setSelectedType: (type) => set({ selectedType: type, deleteMode: false }),
+
+  toggleDeleteMode: () =>
+    set((s) => ({ deleteMode: !s.deleteMode, selectedType: null })),
 }))

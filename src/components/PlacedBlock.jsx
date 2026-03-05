@@ -1,26 +1,15 @@
-import { useRef } from 'react'
 import { useBox } from '@react-three/cannon'
 import { BLOCK_TYPES } from '../constants/blockTypes'
 import { useBuildingStore } from '../store/buildingStore'
 
-/**
- * A single placed block in the scene.
- *
- * Physics: static Cannon.js box body (mass=0) — won't fall but participates
- * in the physics world so dynamic objects (future feature) can collide with it.
- *
- * Removal: Alt+Click removes the block.
- * When the user is in "build mode" (selectedType !== null) this block doesn't
- * intercept pointer events so clicks go through to the ground plane.
- */
 export default function PlacedBlock({ id, type, position }) {
   const blockType = BLOCK_TYPES[type]
   const removeBlock = useBuildingStore((s) => s.removeBlock)
   const selectedType = useBuildingStore((s) => s.selectedType)
+  const deleteMode = useBuildingStore((s) => s.deleteMode)
 
   const isBuilding = !!selectedType
 
-  // Cannon.js static body — args are full dimensions (W, H, D)
   const [ref] = useBox(() => ({
     mass: 0,
     type: 'Static',
@@ -29,8 +18,8 @@ export default function PlacedBlock({ id, type, position }) {
   }))
 
   const handlePointerDown = (e) => {
-    if (isBuilding) return // let clicks fall through to the ground
-    if (e.altKey) {
+    if (isBuilding) return
+    if (e.altKey || deleteMode) {
       e.stopPropagation()
       removeBlock(id)
     }
@@ -43,8 +32,6 @@ export default function PlacedBlock({ id, type, position }) {
       ref={ref}
       castShadow
       receiveShadow
-      // Disable raycasting entirely while in build mode so the ground
-      // plane underneath can receive the pointer events cleanly.
       raycast={isBuilding ? () => null : undefined}
       onPointerDown={handlePointerDown}
     >
