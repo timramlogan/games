@@ -1,25 +1,32 @@
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+import { db } from '../firebase'
+import { ref, onValue, set as dbSet, remove } from 'firebase/database'
 
-export const useBuildingStore = create(
-  persist(
-    (set, get) => ({
-      blocks: [],
-      selectedType: null,
+const blocksRef = ref(db, 'blocks')
 
-      addBlock: (block) =>
-        set((state) => ({ blocks: [...state.blocks, block] })),
+export const useBuildingStore = create((set) => ({
+  blocks: [],
+  selectedType: null,
 
-      removeBlock: (id) =>
-        set((state) => ({ blocks: state.blocks.filter((b) => b.id !== id) })),
+  // Call once on app mount — Firebase pushes updates to all connected clients
+  subscribe: () => {
+    return onValue(blocksRef, (snapshot) => {
+      const data = snapshot.val()
+      set({ blocks: data ? Object.values(data) : [] })
+    })
+  },
 
-      clearAll: () => set({ blocks: [] }),
+  addBlock: (block) => {
+    dbSet(ref(db, `blocks/${block.id}`), block)
+  },
 
-      setSelectedType: (type) => set({ selectedType: type }),
-    }),
-    {
-      name: 'construction-sandbox-v1',
-      partialize: (state) => ({ blocks: state.blocks }),
-    }
-  )
-)
+  removeBlock: (id) => {
+    remove(ref(db, `blocks/${id}`))
+  },
+
+  clearAll: () => {
+    dbSet(blocksRef, null)
+  },
+
+  setSelectedType: (type) => set({ selectedType: type }),
+}))
