@@ -1,17 +1,16 @@
-import { initializeApp } from 'firebase/app'
-import { getDatabase } from 'firebase/database'
+import { initializeApp } from "firebase/app";
+import { getDatabase } from "firebase/database";
 
-// Replace these values with your Firebase project config.
-// Firebase Console → Project Settings → Your apps → SDK setup & config
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT.firebaseapp.com",
-  databaseURL: "https://YOUR_PROJECT-default-rtdb.firebaseio.com",
-  projectId: "YOUR_PROJECT",
-  storageBucket: "YOUR_PROJECT.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID"
-}
+  apiKey: "AIzaSyDavDa8ID815PUO04Tp7BFMnDqKURtMx3g",
+  authDomain: "tristancraft.firebaseapp.com",
+  databaseURL: "https://tristancraft-default-rtdb.firebaseio.com",
+  projectId: "tristancraft",
+  storageBucket: "tristancraft.firebasestorage.app",
+  messagingSenderId: "59923790311",
+  appId: "1:59923790311:web:5c1213835d92ff0a8de542",
+  measurementId: "G-7Q209F5C8Q"
+};
 
-const app = initializeApp(firebaseConfig)
-export const db = getDatabase(app)
+const app = initializeApp(firebaseConfig);
+export const db = getDatabase(app);
