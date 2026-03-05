@@ -1,20 +1,19 @@
-import { Suspense } from 'react'
+import { Suspense, useEffect } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { Physics } from '@react-three/cannon'
 import Scene from './components/Scene'
 import Sidebar from './components/Sidebar'
 import Toolbar from './components/Toolbar'
+import { useBuildingStore } from './store/buildingStore'
 
-/**
- * Root layout: Sidebar (240 px) + Canvas (flex: 1)
- *
- * The Physics provider wraps the entire 3D scene so both Ground and
- * PlacedBlock can call Cannon.js hooks (usePlane / useBox).
- *
- * gravity: [0, -9.81, 0] — standard Earth gravity, ready for future
- * dynamic-block experiments.
- */
 export default function App() {
+  const subscribe = useBuildingStore((s) => s.subscribe)
+
+  useEffect(() => {
+    const unsub = subscribe()
+    return () => unsub()
+  }, [subscribe])
+
   return (
     <div style={{ display: 'flex', width: '100vw', height: '100vh', overflow: 'hidden' }}>
       {/* Left panel */}

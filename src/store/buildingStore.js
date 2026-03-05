@@ -1,39 +1,36 @@
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+import { db } from '../firebase'
+import { ref, onValue, set as dbSet, remove } from 'firebase/database'
 
-/**
- * Central state for the construction sandbox.
- *
- * Persisted keys (via zustand/middleware/persist + localStorage):
- *   - blocks: all placed blocks
- *
- * Transient keys (reset on page load):
- *   - selectedType: currently active block type id
- */
-export const useBuildingStore = create(
-  persist(
-    (set, get) => ({
-      // ── Persisted ───────────────────────────────────────────────────────
-      blocks: [], // [{ id, type, position: [x,y,z] }]
+const blocksRef = ref(db, 'blocks')
 
-      // ── Transient ───────────────────────────────────────────────────────
-      selectedType: null,
+export const useBuildingStore = create((set, get) => ({
+  blocks: [],
+  selectedType: null,
 
-      // ── Actions ─────────────────────────────────────────────────────────
-      addBlock: (block) =>
-        set((state) => ({ blocks: [...state.blocks, block] })),
+  // Call once on app mount — keeps all clients in sync via Firebase
+  subscribe: () => {
+    const unsub = onValue(blocksRef, (snapshot) => {
+      const data = snapshot.val()
+      const blocks = data
+        ? Object.values(data)
+        : []
+      set({ blocks })
+    })
+    return unsub
+  },
 
-      removeBlock: (id) =>
-        set((state) => ({ blocks: state.blocks.filter((b) => b.id !== id) })),
+  addBlock: (block) => {
+    dbSet(ref(db, `blocks/${block.id}`), block)
+  },
 
-      clearAll: () => set({ blocks: [] }),
+  removeBlock: (id) => {
+    remove(ref(db, `blocks/${id}`))
+  },
 
-      setSelectedType: (type) => set({ selectedType: type }),
-    }),
-    {
-      name: 'construction-sandbox-v1',
-      // Only persist blocks, not selectedType
-      partialize: (state) => ({ blocks: state.blocks }),
-    }
-  )
-)
+  clearAll: () => {
+    dbSet(blocksRef, null)
+  },
+
+  setSelectedType: (type) => set({ selectedType: type }),
+}))
